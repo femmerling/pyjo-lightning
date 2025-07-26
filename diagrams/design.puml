@@ -1,0 +1,53 @@
+@startuml
+autonumber
+actor Client
+participant "FastAPI App" as API
+participant "SQLModel/SQLAlchemy" as ORM
+participant "Database" as DB
+
+Client -> API: POST /members/ (new_member_data)
+activate API
+
+API -> API: Validate input (Pydantic)
+alt Input Invalid
+    API --x Client: 400 Bad Request (Validation Error)
+else Input Valid
+    API -> ORM: Query Member by email
+    activate ORM
+    ORM -> DB: SELECT * FROM member WHERE email = :email
+    activate DB
+    DB --> ORM: Query Result (existing_member_by_email)
+    deactivate DB
+    ORM --> API: existing_member_by_email
+    deactivate ORM
+
+    alt Email Exists
+        API --x Client: 409 Conflict (Email already registered)
+    else Email Unique
+        API -> ORM: Query Member by phone (if provided)
+        activate ORM
+        ORM -> DB: SELECT * FROM member WHERE phone = :phone
+        activate DB
+        DB --> ORM: Query Result (existing_member_by_phone)
+        deactivate DB
+        ORM --> API: existing_member_by_phone
+        deactivate ORM
+
+        alt Phone Exists
+            API --x Client: 409 Conflict (Phone already registered)
+        else Phone Unique (or not provided)
+            API -> ORM: Create new Member object
+            API -> ORM: Add Member to session
+            activate ORM
+            ORM -> DB: INSERT INTO member (name, email, phone) VALUES (...)
+            activate DB
+            DB --> ORM: New Member ID
+            deactivate DB
+            ORM --> API: Created Member object
+            deactivate ORM
+            API --> Client: 201 Created (new_member_data_with_id)
+        end
+    end
+end
+deactivate API
+@enduml
