@@ -1,0 +1,15 @@
+# Core API dependencies
+fastapi==0.104.1
+sqlmodel==0.0.14
+uvicorn[standard]==0.24.0
+
+# Database
+sqlalchemy==2.0.23
+
+# Development and testing
+python-multipart==0.0.6
+coverage==7.3.2
+
+# Code quality (mentioned in guardrails.md)
+black==23.11.0
+isort==5.12.0 
